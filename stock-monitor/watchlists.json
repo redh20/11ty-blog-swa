@@ -1,0 +1,6 @@
+{
+  "AI Leaders": ["NVDA","AMD","AVGO","MU","TSM","MSFT","GOOGL","AMZN","META","PLTR"],
+  "AI Chips & Equipment": ["ARM","MRVL","INTC","QCOM","AMAT","LRCX","KLAC","ASML","SMCI","ALAB","CRDO"],
+  "AI Software & Infrastructure": ["ORCL","CRM","NOW","SNOW","DELL","VRT","CEG","VST","CRWV"],
+  "Market": ["SPY","QQQ","SMH"]
+}
