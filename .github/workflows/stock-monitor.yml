@@ -58,4 +58,5 @@ jobs:
         if: steps.gate.outputs.run == 'true'
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          ALPHAVANTAGE_KEY: ${{ secrets.ALPHAVANTAGE_KEY }}   # optional: enables earnings warnings
         run: python stock-monitor/monitor.py
