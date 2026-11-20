@@ -2,9 +2,9 @@ name: Stock monitor
 
 on:
   schedule:
-    # Every 5 min across the UTC hours that cover 3-4 pm US Eastern in both EST and EDT.
-    # The gate step below limits real runs to 15:00-15:59 ET on weekdays.
-    - cron: "*/5 19-21 * * 1-5"
+    # Every 5 min across the UTC hours that cover the US session (9:30-16:00 ET) in both EST and EDT.
+    # The gate step below limits real runs to 09:30-15:59 ET on weekdays.
+    - cron: "*/5 13-21 * * 1-5"
   workflow_dispatch:      # manual run (skips the time gate)
     inputs:
       test_push:
@@ -31,13 +31,14 @@ jobs:
           fi
           curl -fsS -H "Title: Stock monitor" -d "Test alert: your stock monitor push notifications work." "https://ntfy.sh/$NTFY_TOPIC"
           echo "Test push sent."
-      - name: Time gate (3 pm hour, US Eastern)
+      - name: Time gate (regular US session, Eastern)
         id: gate
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "$(TZ=America/New_York date +%H)" = "15" ]; then
+          hm=$(TZ=America/New_York date +%H%M)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || { [ "$hm" -ge 930 ] && [ "$hm" -lt 1600 ]; }; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
-            echo "Outside 3 pm ET window, skipping."
+            echo "Outside 09:30-16:00 ET session, skipping."
             echo "run=false" >> "$GITHUB_OUTPUT"
           fi
       - uses: actions/checkout@v4
