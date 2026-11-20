@@ -5,7 +5,12 @@ on:
     # Every 5 min across the UTC hours that cover 3-4 pm US Eastern in both EST and EDT.
     # The gate step below limits real runs to 15:00-15:59 ET on weekdays.
     - cron: "*/5 19-21 * * 1-5"
-  workflow_dispatch: {}   # manual run (skips the time gate)
+  workflow_dispatch:      # manual run (skips the time gate)
+    inputs:
+      test_push:
+        description: "Send a test push notification to your ntfy topic"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -15,6 +20,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - name: Send test push
+        if: github.event.inputs.test_push == 'true'
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: |
+          if [ -z "$NTFY_TOPIC" ]; then
+            echo "::error::Secret NTFY_TOPIC is not set."
+            exit 1
+          fi
+          curl -fsS -H "Title: Stock monitor" -d "Test alert: your stock monitor push notifications work." "https://ntfy.sh/$NTFY_TOPIC"
+          echo "Test push sent."
       - name: Time gate (3 pm hour, US Eastern)
         id: gate
         run: |
