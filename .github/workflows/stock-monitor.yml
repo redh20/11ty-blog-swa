@@ -1,0 +1,37 @@
+name: Stock monitor
+
+on:
+  schedule:
+    # Every 5 min across the UTC hours that cover 3-4 pm US Eastern in both EST and EDT.
+    # The gate step below limits real runs to 15:00-15:59 ET on weekdays.
+    - cron: "*/5 19-21 * * 1-5"
+  workflow_dispatch: {}   # manual run (skips the time gate)
+
+permissions:
+  contents: read
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Time gate (3 pm hour, US Eastern)
+        id: gate
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "$(TZ=America/New_York date +%H)" = "15" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Outside 3 pm ET window, skipping."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.run == 'true'
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.run == 'true'
+        with:
+          python-version: "3.12"
+      - name: Run monitor
+        if: steps.gate.outputs.run == 'true'
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: python stock-monitor/monitor.py
