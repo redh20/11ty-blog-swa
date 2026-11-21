@@ -14,6 +14,8 @@ Awareness alerts (information, not a bottom call; each fires once per stock per 
   MOVE    - day change of 5% or more (re-alerts when it reaches the next 5% step: 10%, 15%...)
   RECLAIM - price crosses back above its 50-day or 200-day average (yesterday's level)
   EARNINGS- a stock reports today or on the next trading day (needs a free ALPHAVANTAGE_KEY)
+  LOST200 - price falls below its 200-day average (a risk check; the one timing rule that cut drawdowns in a backtest)
+  THRUST  - a day up 8%+ on 2x+ volume (context only; weak edge in a backtest)
 
 Usage:
   python monitor.py            # one snapshot
@@ -36,6 +38,8 @@ CFG = {
     "vol_mult": float(os.environ.get("MON_VOL_MULT", 2.0)),     # volume so far vs 20d avg full-day volume
     "move_pct": float(os.environ.get("MON_MOVE", 5.0)),         # big-move step, % on the day
     "reclaim_smas": (50, 200),
+    "thrust_pct": float(os.environ.get("MON_THRUST_PCT", 8.0)),  # big up day, %
+    "thrust_vol": float(os.environ.get("MON_THRUST_VOL", 2.0)),  # ...on this multiple of normal volume
 }
 STATE_FILE = Path(os.environ.get("STATE_FILE", HERE / "state.json"))
 UA = {"User-Agent": "Mozilla/5.0"}
@@ -59,13 +63,14 @@ def fetch(sym):
             h = max(h, m.get("regularMarketDayHigh", h)); l = min(l, m.get("regularMarketDayLow", l))
             prior = closes[:-1]                                   # closes before today
             reclaims = [n for n in CFG["reclaim_smas"] if len(prior) >= n and prior[-1] <= sma(prior, n) < last]
+            lost200 = len(prior) >= 200 and prior[-1] >= sma(prior, 200) > last
             avg_vol = sum(vols[-21:-1]) / 20 if len(vols) >= 21 else 0
             today_vol = m.get("regularMarketVolume") or vols[-1]
             closes[-1] = last
             rs = rsi_series(closes)
             return sym, dict(sym=sym, last=last, open=o, high=h, low=l, prev=closes[-2],
                              rsi=rs[-1], rsi_min=min(rs[-CFG["rsi_lookback"]:]), sma200=sma(closes, 200),
-                             vol_ratio=(today_vol / avg_vol) if avg_vol else 0, reclaims=reclaims)
+                             vol_ratio=(today_vol / avg_vol) if avg_vol else 0, reclaims=reclaims, lost200=lost200)
         except Exception:
             time.sleep(1.5 * (attempt + 1))
     return sym, None
@@ -96,6 +101,7 @@ def metrics(d):
     d["rebound"] = d["oversold"] and d["above_low"] >= CFG["off_low_pct"]
     d["unusual_vol"] = d["vol_ratio"] >= CFG["vol_mult"]
     d["move_tier"] = int(abs(d["day_chg"]) // CFG["move_pct"] * CFG["move_pct"]) if abs(d["day_chg"]) >= CFG["move_pct"] else 0
+    d["thrust"] = d["day_chg"] >= CFG["thrust_pct"] and d["vol_ratio"] >= CFG["thrust_vol"]
     return d
 
 def notify(msg, title="Stock monitor", priority="default", tags=""):
@@ -200,7 +206,8 @@ def snapshot():
             v = f"{d['vs200']:>+9.1f}" if d["vs200"] is not None else f"{'n/a':>9}"
             sig = " ".join(x for x in ["REBOUND" if d["rebound"] else "oversold" if d["oversold"] else "",
                                        "VOLUME" if d["unusual_vol"] else "", "MOVE" if d["move_tier"] else "",
-                                       "RECLAIM" + "/".join(map(str, d["reclaims"])) if d["reclaims"] else ""] if x)
+                                       "RECLAIM" + "/".join(map(str, d["reclaims"])) if d["reclaims"] else "",
+                                       "LOST200" if d["lost200"] else "", "THRUST" if d["thrust"] else ""] if x)
             print(f"{t:<6}{d['last']:>9.2f}{d['day_chg']:>+7.2f}{d['above_low']:>9.2f}{d['range_pos']:>8.0f}{d['rsi']:>7.0f}{d['vol_ratio']:>6.1f}{v}  {sig}")
     stocks = [d for s, d in data.items() if d and s not in ctx]
     over = [d for d in stocks if d["oversold"]]
@@ -240,6 +247,14 @@ def snapshot():
     if rc:
         push("reclaim", [f"{d['sym']} back above its {n}-day average ({d['last']:.2f})" for d, n in rc],
              f"RECLAIM: {head([d['sym'] for d, n in rc])}", tags="white_check_mark")
+    lost = [d for d in stocks if d["lost200"] and fresh("lost200:" + d["sym"])]
+    if lost:
+        push("lost200", [f"{d['sym']} fell below its 200-day average ({d['last']:.2f}, {d['vs200']:+.1f}%)" for d in lost],
+             f"LOST 200-DAY: {head([d['sym'] for d in lost])}", "high", "warning")
+    th = [d for d in stocks if d["thrust"] and fresh("thrust:" + d["sym"])]
+    if th:
+        push("thrust", [f"{d['sym']} {d['day_chg']:+.1f}% on {d['vol_ratio']:.1f}x volume" for d in th],
+             f"THRUST: {head([d['sym'] for d in th])}", tags="rocket")
     items = load_earnings(state, [d["sym"] for d in stocks])
     if items is None and not os.environ.get("ALPHAVANTAGE_KEY") and "earn_note" not in state:
         print("earnings: skipped (set ALPHAVANTAGE_KEY to enable earnings warnings)"); state["earn_note"] = True
@@ -253,7 +268,7 @@ def snapshot():
     et = et_now()
     if et and (et.hour, et.minute) >= CFG["digest_after_et"] and et.hour == 15 and not state["digest"]:
         def of(kind): return ", ".join(sorted({k.split(":")[1] for k in sent if k.startswith(kind + ":")})) or "none"
-        notify(f"Rebounds: {of('rebound')}\nVolume: {of('volume')}\nBig moves: {of('move')}\nReclaims: {of('reclaim')}\n{line}",
+        notify(f"Rebounds: {of('rebound')}\nVolume: {of('volume')}\nBig moves: {of('move')}\nReclaims: {of('reclaim')}\nLost 200d: {of('lost200')}\nThrust: {of('thrust')}\n{line}",
                title="Stock monitor: end of window")
         print("Digest sent."); state["digest"] = True
     try:
