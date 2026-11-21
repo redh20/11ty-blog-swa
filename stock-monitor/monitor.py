@@ -53,7 +53,7 @@ def fetch(sym):
                 res = json.load(r)["chart"]["result"][0]
             q = res["indicators"]["quote"][0]
             rows = [(o, h, l, c, v or 0) for o, h, l, c, v in zip(q["open"], q["high"], q["low"], q["close"], q["volume"]) if None not in (o, h, l, c)]
-            if len(rows) < 20:
+            if len(rows) < 2:                                     # new listings are fine; indicators need more history
                 return sym, None
             closes = [r[3] for r in rows]
             vols = [r[4] for r in rows]
@@ -67,9 +67,9 @@ def fetch(sym):
             avg_vol = sum(vols[-21:-1]) / 20 if len(vols) >= 21 else 0
             today_vol = m.get("regularMarketVolume") or vols[-1]
             closes[-1] = last
-            rs = rsi_series(closes)
+            rs = rsi_series(closes) if len(closes) > 15 else None
             return sym, dict(sym=sym, last=last, open=o, high=h, low=l, prev=closes[-2],
-                             rsi=rs[-1], rsi_min=min(rs[-CFG["rsi_lookback"]:]), sma200=sma(closes, 200),
+                             rsi=rs[-1] if rs else None, rsi_min=min(rs[-CFG["rsi_lookback"]:]) if rs else None, sma200=sma(closes, 200),
                              vol_ratio=(today_vol / avg_vol) if avg_vol else 0, reclaims=reclaims, lost200=lost200)
         except Exception:
             time.sleep(1.5 * (attempt + 1))
@@ -97,7 +97,7 @@ def metrics(d):
     d["from_open"] = (d["last"] / d["open"] - 1) * 100
     d["day_chg"] = (d["last"] / d["prev"] - 1) * 100
     d["vs200"] = (d["last"] / d["sma200"] - 1) * 100 if d["sma200"] else None
-    d["oversold"] = d["rsi_min"] < CFG["rsi_max"]
+    d["oversold"] = d["rsi_min"] is not None and d["rsi_min"] < CFG["rsi_max"]
     d["rebound"] = d["oversold"] and d["above_low"] >= CFG["off_low_pct"]
     d["unusual_vol"] = d["vol_ratio"] >= CFG["vol_mult"]
     d["move_tier"] = int(abs(d["day_chg"]) // CFG["move_pct"] * CFG["move_pct"]) if abs(d["day_chg"]) >= CFG["move_pct"] else 0
@@ -208,7 +208,7 @@ def snapshot():
                                        "VOLUME" if d["unusual_vol"] else "", "MOVE" if d["move_tier"] else "",
                                        "RECLAIM" + "/".join(map(str, d["reclaims"])) if d["reclaims"] else "",
                                        "LOST200" if d["lost200"] else "", "THRUST" if d["thrust"] else ""] if x)
-            print(f"{t:<6}{d['last']:>9.2f}{d['day_chg']:>+7.2f}{d['above_low']:>9.2f}{d['range_pos']:>8.0f}{d['rsi']:>7.0f}{d['vol_ratio']:>6.1f}{v}  {sig}")
+            print(f"{t:<6}{d['last']:>9.2f}{d['day_chg']:>+7.2f}{d['above_low']:>9.2f}{d['range_pos']:>8.0f}{(f"{d['rsi']:.0f}" if d['rsi'] is not None else 'n/a'):>7}{d['vol_ratio']:>6.1f}{v}  {sig}")
     stocks = [d for s, d in data.items() if d and s not in ctx]
     over = [d for d in stocks if d["oversold"]]
     reb = [d for d in stocks if d["rebound"]]
