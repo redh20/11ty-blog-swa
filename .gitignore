@@ -3,3 +3,4 @@ node_modules/
 package-lock.json
 stock-monitor/state.json
 __pycache__/
+backtest/.cache/
