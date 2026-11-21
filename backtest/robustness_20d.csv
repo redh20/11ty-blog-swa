@@ -1,0 +1,34 @@
+side,signal,n3,ex3,p3,early,late,nU,exU,pU,exU_late,consistent
+buy,20-day high breakout,814,0.17,0.43,0.53,-0.11,5165,-0.22,0.94,-0.31,False
+buy,3 down days then an up day,840,0.08,0.4,0.53,-0.32,5375,0.18,0.16,0.54,False
+buy,52-week high breakout,388,0.67,0.23,2.41,-0.27,2314,0.23,0.4,-0.27,False
+buy,55-day high breakout,578,0.15,0.43,0.96,-0.43,3572,-0.1,0.85,-0.32,False
+buy,Back above lower Bollinger band,318,0.78,0.16,0.73,0.82,2244,0.22,0.19,1.17,True
+buy,"Capitulation: vol>=2x, RSI<35, close upper half",30,0.43,0.31,5.72,0.3,215,0.72,0.33,2.52,True
+buy,Close crosses above 200d,169,0.08,0.52,0.46,-0.18,1269,-0.36,0.84,-0.1,False
+buy,Close crosses above 50d,419,1.43,0.02,2.43,0.58,2997,-0.45,0.97,-0.42,False
+buy,Day drop of 8%+ (flush),143,1.07,0.24,1.32,-0.53,926,1.87,0.0,1.17,False
+buy,Day gain of 8%+ on >=2x volume,96,3.5,0.02,5.02,0.55,596,1.56,0.01,1.41,True
+buy,Gap up >3% on >=1.5x volume,219,0.92,0.24,1.69,0.17,1418,0.84,0.03,0.74,True
+buy,Golden cross (50d over 200d),42,3.1,0.04,4.93,1.45,328,0.53,0.15,0.35,True
+buy,MACD cross up while MACD<0,331,1.02,0.09,0.67,1.32,2386,-0.13,0.6,0.25,False
+buy,MACD crosses above signal,678,0.58,0.14,0.92,0.28,4502,-0.26,0.91,-0.24,False
+buy,RSI14 crosses up through 30,134,-1.89,0.96,-2.72,-0.44,831,-0.88,0.97,0.82,False
+buy,RSI14 crosses up through 50 above 200d,473,0.85,0.08,1.25,0.52,2982,-0.17,0.76,0.04,False
+buy,RSI14<30 & close >2% off day low,72,0.06,0.55,-0.53,1.98,420,0.54,0.2,3.46,False
+buy,RSI2<10 in uptrend (>200d),544,0.55,0.18,0.68,0.38,3061,0.44,0.03,0.14,True
+buy,Stoch %K crosses up %D below 20,387,0.77,0.14,1.36,0.12,2614,-0.01,0.44,0.72,False
+buy,"Volume spike up (>=2x, +2% day)",245,0.93,0.16,1.61,-0.05,1703,0.41,0.19,-0.11,False
+sell,20-day low breakdown,557,0.86,0.93,1.25,0.5,3775,0.45,0.99,0.93,False
+sell,Back below upper Bollinger band,486,-0.73,0.07,-0.59,-0.87,3017,-0.01,0.37,-0.31,True
+sell,Close below 50d on >=1.5x volume,141,-1.24,0.11,-2.27,-0.6,925,-0.94,0.01,-0.25,True
+sell,Close crosses below 200d,165,0.58,0.66,0.43,0.75,1271,-0.52,0.14,-0.31,False
+sell,Close crosses below 50d,432,-0.35,0.33,-0.71,-0.14,3017,-0.65,0.01,-0.75,True
+sell,Death cross (50d under 200d),42,-0.96,0.44,0.51,1.43,326,-1.25,0.15,1.43,False
+sell,Extended: >30% above 50d,66,2.37,0.88,3.68,-3.04,429,2.9,1.0,3.62,False
+sell,Gap down >3% on >=1.5x volume,180,-2.2,0.01,-2.54,-1.85,1232,-0.22,0.3,-0.07,True
+sell,MACD crosses below signal,683,0.41,0.78,0.29,0.46,4476,0.21,0.86,-0.07,False
+sell,RSI14 crosses down through 70,309,-0.79,0.1,-1.48,-0.41,1792,0.9,0.99,0.16,False
+sell,RSI14>80 (extreme overbought),74,0.99,0.63,4.57,-2.36,314,0.9,0.76,-0.27,False
+sell,Stoch %K crosses down %D above 80,607,-0.22,0.3,-0.31,-0.18,3781,0.02,0.52,-0.16,False
+sell,"Volume spike down (>=2x, -2% day)",225,-0.64,0.24,-1.22,0.06,1568,0.01,0.55,0.44,False
