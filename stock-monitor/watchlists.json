@@ -1,5 +1,4 @@
 {
-  "Big Tech": ["AMZN","NVDA","GOOGL","META","MSFT","AAPL","SPCX","ANT"],
-  "Chips & Hardware": ["MU","AMD","DELL"],
-  "Healthcare": ["LLY","MRNA"]
+  "Big Tech": ["AMZN","NVDA","GOOGL","META","MSFT","AAPL","TSLA"],
+  "Chips & Hardware": ["MU","AMD","DELL"]
 }
